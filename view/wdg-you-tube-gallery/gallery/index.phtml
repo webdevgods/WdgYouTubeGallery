@@ -1,0 +1,99 @@
+<?php
+/* @var $search \Google_Service_YouTube */
+$search = $this->search;
+
+/* @var $channelResource \Google_Service_YouTube_Channels_Resource */
+$channelResource = $search->channels;
+
+/* @var $channelList \Google_Service_YouTube_ChannelListResponse */
+$channelList = $channelResource->listChannels("id,snippet", array("id" => $this->channelId));
+
+if($channelList->valid())
+{
+    $albums_array = array("albums" => array());
+    $playlistsResource = $search->playlists;
+    
+    $playlistsResponse = $playlistsResource->listPlaylists("id,snippet", array("channelId" => $this->channelId));
+    
+    if($playlistsResponse->valid())
+    {
+        while($playlistsResponse->valid())
+        {            
+            $playlist = $playlistsResponse->current();
+            /* @var $snippet \Google_Service_YouTube_ChannelSnippet */
+            $snippet = $playlist->getSnippet();
+            /*@var $thumbnails Google_Service_YouTube_ThumbnailDetails */
+            $thumbnails = $snippet->getThumbnails();
+            /* @var $thumbnail Google_Service_YouTube_Thumbnail */
+            $thumbnail = $thumbnails->getMedium();
+
+            $album_object = (object) array(
+                "title" => $snippet->getTitle(),
+                "images" => array()
+            );
+            
+            /* @var $playlistItemsResource \Google_Service_YouTube_PlaylistItems_Resource */
+            $playlistItemsResource = $search->playlistItems;
+            /* @var $playlistItemsResponse \Google_Service_YouTube_PlaylistItemListResponse */
+            $playlistItemsResponse = $playlistItemsResource->listPlaylistItems("id,snippet", array("playlistId" => $playlist->getId()));
+            
+            if($playlistItemsResponse->valid())
+            {
+                while($playlistItemsResponse->valid())
+                {
+                    /* @var $video \Google_Service_YouTube_PlaylistItem */
+                    $video = $playlistItemsResponse->current();
+                    /* @var $videoSnippet \Google_Service_YouTube_PlaylistItemSnippet */
+                    $videoSnippet = $video->getSnippet();
+                    /*@var $thumbnails Google_Service_YouTube_ThumbnailDetails */
+                    $thumbnails = $videoSnippet->getThumbnails();
+                    /* @var $thumbnail Google_Service_YouTube_Thumbnail */
+                    $thumbnail = $thumbnails->getDefault();
+                    
+                    $album_object->images[] = (object) array(
+                        "caption" => $videoSnippet->getTitle(), 
+                        "video" => $videoSnippet->getResourceId()->getVideoId(),
+                        "src" => $thumbnail->getUrl(), 
+                        "th" => $thumbnail->getUrl()
+                    );
+                    $playlistItemsResponse->next();
+                }
+            }
+            
+            $albums_array["albums"][] = $album_object;
+            
+            $playlistsResponse->next();
+        }
+        
+        ?>
+        <div class="entry-content">
+            <!-- The HTML -->
+            <div id="plusgallery"
+                 data-image-path="/wdg-youtube-gallery/plusgallery/images/plusgallery"
+                 data-credit="false"
+                 data-type="local"
+                 data-image-data='<?php echo json_encode($albums_array);?>'
+                 data-object-path="test"
+                 ><!-- +Gallery http://www.plusgallery.net/ -->
+            </div>
+        </div>
+
+        <!-- Load jQuery ahead of this -->
+        <script src="/wdg-youtube-gallery/plusgallery/js/plusgallery.js"></script>
+        <link rel="stylesheet" href="/wdg-youtube-gallery/plusgallery/css/plusgallery.css">
+        <script>
+            $(function() {
+                
+                $('.pgthumb').on('click', '#plusgallery', function()
+                {
+                    console.log("clicked");
+                });
+                //DOM loaded
+                $('#plusgallery').plusGallery();
+            });
+        </script>
+        <?php
+    }
+    else echo "No playlists";
+}
+else echo "Invalid Channel";

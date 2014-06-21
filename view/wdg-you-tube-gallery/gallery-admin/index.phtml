@@ -1,0 +1,135 @@
+<?php
+$this->headTitle()->append("Videos");
+?>
+
+<h1><?php echo $this->translate('Video Playlists') ?></h1>
+
+<div class="navbar filter-bar">
+    <div class="navbar-inner">
+        <div class="pull-right">
+            <a href="<?php echo $this->url("zfcadmin/wdg-youtubegallery-admin/playlist/add");?>" class="btn btn-primary">
+                <?php echo $this->translate('Add New Playlist') ?>
+            </a>
+        </div>
+    </div>
+</div>
+<?php
+/* @var $youtube Google_Service_YouTube */
+$youtube = $this->youtube;
+   
+if ($youtube->getClient()->getAccessToken()) 
+{
+    try 
+    {
+        /* @var $playlistsResource Google_Service_YouTube_Playlists_Resource */
+        $playlistsResource = $youtube->playlists;
+        
+        /* @var $channelsResource Google_Service_YouTube_Channels_Resource */
+        $channelsResource = $youtube->channels;
+        
+        /* @var $playlistItemsResource Google_Service_YouTube_PlaylistItems_Resource */
+        $playlistItemsResource = $youtube->playlistItems;
+        
+        /* @var $channelsResponse Google_Service_YouTube_ChannelListResponse */
+        $channelsResponse = $channelsResource->listChannels('id, snippet, contentDetails', array(
+          'id' => $this->channelId,
+        ));
+            
+        if($channelsResponse->count() > 0)
+        {
+            while($channelsResponse->valid())
+            {
+                /* @var $channel Google_Service_YouTube_Channel */
+                $channel = $channelsResponse->current();
+
+                /* @var $channelSnippet Google_Service_YouTube_ChannelSnippet */
+                $channelSnippet = $channel->getSnippet();
+
+                /* @var $playlists Google_Service_YouTube_PlaylistListResponse */
+                $playlistsResponse = $playlistsResource->listPlaylists('id, snippet', array(
+                  'channelId' => $channel->getId()//'',
+                ));
+                
+                if($playlistsResponse->count() > 0)
+                {
+                    ?>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Channel</th>
+                                <th>Description</th>
+                                <th>Tags</th>
+                                <th>Video Count</th>
+                                <th>&nbsp;</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php
+                        while($playlistsResponse->valid())
+                        {
+                            /* @var $playlist Google_Service_YouTube_Playlist */
+                            $playlist = $playlistsResponse->current();
+
+                            /* @var $playlistSnippet Google_Service_YouTube_PlaylistSnippet */
+                            $playlistSnippet = $playlist->getSnippet();
+
+                            /* @var $playlistItemsResponse Google_Service_YouTube_PlaylistItemListResponse */
+                            $playlistItemsResponse = $playlistItemsResource->listPlaylistItems('id, snippet, contentDetails', array(
+                              'playlistId' => $playlist->getId()
+                            ));
+                            ?>
+                            <tr>
+                                <td>
+                                    <a title="Show Playlist" href="<?php echo $this->url("zfcadmin/wdg-youtubegallery-admin/playlist/show", array("id" => $playlist->getId()));?>">
+                                        <?php echo $playlistSnippet->getTitle();?>
+                                    </a>
+                                </td>
+                                <td><?php echo $channelSnippet->getTitle();?></td>
+                                <td><?php echo $playlistSnippet->getDescription();?></td>
+                                <td><?php echo $playlistSnippet->getTags();?></td>
+                                <td><?php echo $playlistItemsResponse->count();?></td>
+                                <td>
+                                    <a href="<?php echo $this->url('zfcadmin/wdg-youtubegallery-admin/playlist/edit', array('id' => $playlist->getId())); ?>">
+                                        <?php echo $this->translate('Edit') ?>
+                                    </a>
+                                    |
+                                    <a href="<?php echo $this->url('zfcadmin/wdg-youtubegallery-admin/playlist/delete', array('id' => $playlist->getId())); ?>"
+                                       onclick="return confirm('<?php echo $this->translate('Really delete playlist?') ?>')">
+                                        <?php echo $this->translate('Delete') ?>
+                                    </a>
+                                </td>
+                            </tr>
+                            <?php
+
+                            $playlistsResponse->next();
+                        }
+                        ?>
+                        </tbody>
+                    </table>
+                    <?php
+                }
+                else echo 'No playlists in channel.';
+            
+                $channelsResponse->next();
+            }
+        }
+        else echo 'Could not get channel';
+    } 
+    catch (Google_ServiceException $e) 
+    {
+        throw new Exception(sprintf('A service error occurred: %s',
+            htmlspecialchars($e->getMessage())
+        ));
+    } 
+    catch (Google_Exception $e) 
+    {
+        throw new Exception(sprintf('An client error occurred: %s',
+            htmlspecialchars($e->getMessage())
+        ));
+    }
+} 
+else 
+{
+    throw new Exception("Authorization Failed");
+}

@@ -1,0 +1,151 @@
+<?php $this->headTitle()->append("Video Gallery Playlist"); ?>
+
+<h1><?php echo $this->translate('Video Gallery Playlist') ?></h1>
+
+<ul class="nav nav-tabs" id="galleryPlaylistTabs" style="margin-bottom:10px">
+    <li class="active"><a href="#tab_info">Info</a></li>
+    <li><a href="#tab_videos">Videos</a></li>
+</ul>
+<?php
+$youtube = $this->youtube;
+        
+/* @var $playlistsResource \Google_Service_YouTube_Playlists_Resource */
+$playlistsResource = $youtube->playlists;
+
+/* @var $playlists \Google_Service_YouTube_PlaylistListResponse */
+$playlistsResponse = $playlistsResource->listPlaylists('id, snippet', array(
+  'id' => $this->playlistId
+));
+
+if(!$playlistsResponse->valid()):
+    echo 'Could not get playlist';
+else:
+    /* @var $playlist \Google_Service_YouTube_Playlist */
+    $playlist = $playlistsResponse->current();
+?>
+<div class="tab-content">
+    <div class="tab-pane active" id="tab_info">
+        <div class="navbar filter-bar">
+            <div class="navbar-inner">
+                <div class="pull-right">
+                    <a href="<?php echo $this->url('zfcadmin/wdg-youtubegallery-admin/playlist/edit', array('id' => $playlist->getId())) ?>" class="btn btn-primary">
+                        <?php echo $this->translate('Edit Playlist') ?>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <?php         
+        /* @var $playlistSnippet Google_Service_YouTube_PlaylistSnippet */
+        $playlistSnippet = $playlist->getSnippet();
+        
+        $values = array(
+            "Id" => (string) $playlist->getId(),
+            "Title" => $playlistSnippet->getTitle(),
+            "Description" => $playlistSnippet->getDescription(),
+            "Tags" => $playlistSnippet->getTags(),
+            "Created" => $playlistSnippet->getPublishedAt(),
+        );
+
+        $count  = count($values);
+        $i      = 0;
+        
+        foreach($values as $label => $value)
+        {
+            $i++;
+            ?>
+            <label class="text-info"><?php echo $label;?>:</label>
+            <?php 
+            echo $value;
+            
+            if($i !== $count)
+                echo "<hr />";
+        }
+        ?>
+    </div>  
+    <div class="tab-pane" id="tab_videos">
+        <div class="navbar filter-bar">
+            <div class="navbar-inner">
+                <div class="pull-right">
+                    <a href="<?php echo $this->url('zfcadmin/wdg-youtubegallery-admin/playlist/add-video', array('id' => $playlist->getId())) ?>" class="btn btn-primary">
+                        <?php echo $this->translate('Add Video') ?>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div>
+            <?php
+            /* @var $playlistItemsResource Google_Service_YouTube_PlaylistItems_Resource */
+            $playlistItemsResource = $youtube->playlistItems;
+        
+            /* @var $playlistItemsResponse Google_Service_YouTube_PlaylistItemListResponse */
+            $playlistItemsResponse = $playlistItemsResource->listPlaylistItems('id, snippet, contentDetails', array(
+              'playlistId' => $playlist->getId()
+            ));
+
+            if($playlistItemsResponse->count() > 0)
+            {
+                while($playlistItemsResponse->valid()) 
+                {
+                    /* @var $video Google_Service_YouTube_PlaylistItem */
+                    $video = $playlistItemsResponse->current();
+                    /* @var $videoSnippet Google_Service_YouTube_PlaylistItemSnippet */
+                    $videoSnippet = $video->getSnippet();
+                    /*@var $thumbnails Google_Service_YouTube_ThumbnailDetails */
+                    $thumbnails = $videoSnippet->getThumbnails();
+                    /* @var $thumbnail Google_Service_YouTube_Thumbnail */
+                    $thumbnail = $thumbnails->getMedium();
+                    ?>
+                    <div>
+                        <table class="table">
+                            <tr>
+                                <td rowspan="5" style="width: 125px;text-align: center;">
+                                    <img style="width: 200px;" src="<?php echo $thumbnail->getUrl();?>" />
+                                </td>
+                                <td>
+                                    <a href="
+                                        <?php 
+                                        echo $this->url(
+                                            'zfcadmin/wdg-youtubegallery-admin/playlist/remove-video', 
+                                            array('id' => $video->getId())
+                                        ); 
+                                        ?>
+                                    ">
+                                        <?php echo $this->translate('Delete') ?>
+                                    </a>                                    
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Title: <?php echo $videoSnippet->getTitle();?></td>
+                            </tr>
+                            <tr>
+                                <td>Description: <?php echo $videoSnippet->getDescription();?></td>
+                            </tr>
+                            <tr>
+                                <td>Published:<?php echo $videoSnippet->getPublishedAt();?></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <?php
+                    $playlistItemsResponse->next();
+                }
+            }
+            else echo "<tr><td>No videos</td></tr>";
+            ?>
+        </div>
+    </div>
+</div>
+<?php
+endif;
+?>
+<div class="clearfix"></div>
+<?php
+$script = $this->inlineScript();
+$script->appendScript(<<<'EOT'
+    
+    $("#galleryPlaylistTabs a").click(function (e) {
+        e.preventDefault();
+        $(this).tab("show");
+    });
+    
+EOT
+);

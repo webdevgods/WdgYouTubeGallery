@@ -1,0 +1,24 @@
+<?php
+$video      = $this->video;
+$attributes = isset($this->attributes) && is_array($this->attributes) ? $this->attributes : array();
+
+if(!$video)
+    return "";
+
+if(!isset($attributes["alt"]))$attributes["alt"] = $video->getName();
+if(!isset($attributes["title"]))$attributes["title"] = $video->getName();
+
+$attributes_string = "";
+
+foreach ($attributes as $key => $value) {
+    $attributes_string .= ' '.$key.'="'.htmlspecialchars($value).'" '; 
+}
+
+if($video):
+    ?>
+    <img 
+        src="<?php echo $this->getFileById($video->getId())->getUrl();?>" 
+        <?php echo $attributes_string;?>
+        />
+<?php
+endif;

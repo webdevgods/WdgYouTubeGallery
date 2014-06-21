@@ -1,0 +1,38 @@
+{
+    "name": "webdevgods/wdg-youtube-gallery",
+    "description": "A ZF2/Doctrine2 YouTube gallery module.",
+    "type": "zf-module",
+    "license": "MIT",
+    "keywords": [
+        "library",
+        "libs",
+        "ZF2",
+        "Zend Framework",
+        "webdevgods",
+        "wdg",
+        "module",
+        "YouTube",
+        "gallery"
+    ],
+    "homepage": "https://github.com/webdevgods/WdgYouTubeGallery",
+    "authors": [
+        {
+            "name": "Jessie Green",
+            "email": "jessie.ims@gmail.com",
+            "homepage": "http://jessiegreen.com/"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.3",
+        "zendframework/zendframework": "~2.1",
+        "google/apiclient": "1.0.*@beta"
+    },
+    "autoload": {
+        "psr-0": {
+            "WdgYouTubeGallery": "src/"
+        },
+        "classmap": [
+            "./Module.php"
+        ]
+    }
+}

@@ -127,8 +127,11 @@ class Gallery extends ServiceAbstract
             $client->setClientId($client_id);
             $client->setClientSecret($client_secret);
             
-            $protocol = $_SERVER['SERVER_PORT'] == '443' || 
-                (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"]) ? "https" : "http";
+            //$protocol = $_SERVER['SERVER_PORT'] == '443' || 
+                //(isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"]) ? "https" : "http";
+                
+            //Temporarily setting to http until I find a better way
+            $protocol = "http";
             
             $redirect = filter_var(
                 $protocol . '://' . $_SERVER['HTTP_HOST'] . "/admin/videos",
